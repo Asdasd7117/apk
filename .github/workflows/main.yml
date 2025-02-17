@@ -23,6 +23,7 @@ jobs:
         run: |
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             echo "gradle-wrapper.jar not found, regenerating..."
+            chmod +x gradlew
             ./gradlew wrapper
           fi
 
@@ -44,7 +45,7 @@ jobs:
 
       - name: Build APK
         run: |
-          chmod +x gradlew
+          chmod +x gradlew  # إصلاح مشكلة التصاريح
           ./gradlew assembleDebug
 
       - name: Upload APK
