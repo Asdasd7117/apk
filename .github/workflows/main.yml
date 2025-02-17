@@ -1,16 +1,18 @@
 name: Build APK
 
-on:
+on: 
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set up job
+        run: echo "Starting build process"
+
       - name: Checkout Repository
         uses: actions/checkout@v3
 
@@ -23,24 +25,32 @@ jobs:
       - name: Install Android SDK & Gradle
         run: |
           sudo apt update
-          sudo apt install -y openjdk-17-jdk wget unzip
+          sudo apt install -y openjdk-17-jdk unzip wget
+
+          # تثبيت Gradle
           wget https://services.gradle.org/distributions/gradle-7.5-bin.zip
           unzip gradle-7.5-bin.zip
           export PATH=$PWD/gradle-7.5/bin:$PATH
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip commandlinetools-linux-8512546_latest.zip -d android-sdk
-          export ANDROID_SDK_ROOT=$PWD/android-sdk
+          
+          # تثبيت Android SDK
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          mkdir -p $HOME/android-sdk
+          unzip commandlinetools-linux-11076708_latest.zip -d $HOME/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/bin:$PATH
+          export PATH=$ANDROID_SDK_ROOT/platform-tools:$PATH
+          
+          # إعداد Android SDK Manager
           yes | sdkmanager --licenses
-          sdkmanager "platforms;android-33" "build-tools;33.0.1"
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-33" "build-tools;33.0.1" "platform-tools"
 
       - name: Build APK
         run: |
-          cd app
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: app-release
-          path: app/build/outputs/apk/debug/*.apk
+          name: app-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
