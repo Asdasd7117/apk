@@ -21,7 +21,7 @@ jobs:
 
       - name: Fix Gradle Wrapper
         run: |
-          # حذف gradle-wrapper.jar في حالة كان غير صالح أو مفقود
+          # حذف ملف gradle-wrapper.jar إذا كان تالفًا
           if [ -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             if ! unzip -t gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
               echo "gradle-wrapper.jar is corrupted. Deleting..."
@@ -30,13 +30,12 @@ jobs:
           fi
 
           # إعادة تنزيل Gradle Wrapper في حالة كان محذوفًا
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+          if [ ! -f "gradlew" ]; then
             echo "Downloading Gradle Wrapper..."
-            curl -L https://services.gradle.org/distributions/gradle-8.4-bin.zip -o gradle.zip
-            unzip -q gradle.zip
+            curl -sSLo gradle-wrapper.tgz https://services.gradle.org/distributions/gradle-8.4-bin.zip
+            unzip -q gradle-wrapper.tgz
             mv gradle-* gradle
-            mkdir -p gradle/wrapper
-            cp gradle/lib/plugins/gradle-wrapper.jar gradle/wrapper/
+            cp gradle/bin/gradle gradlew
           fi
 
       - name: Grant execute permission to Gradlew
@@ -68,7 +67,7 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: app-apk
           path: app/build/outputs/apk/debug/app-debug.apk
