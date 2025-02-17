@@ -21,7 +21,10 @@ jobs:
 
       - name: Fix Gradle Wrapper
         run: |
-          # حذف ملف gradle-wrapper.jar إذا كان تالفًا
+          # تأكد من أن مجلد gradle/wrapper موجود
+          mkdir -p gradle/wrapper
+
+          # حذف ملف gradle-wrapper.jar إذا كان تالفًا أو غير موجود
           if [ -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             if ! unzip -t gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
               echo "gradle-wrapper.jar is corrupted. Deleting..."
@@ -30,12 +33,12 @@ jobs:
           fi
 
           # إعادة تنزيل Gradle Wrapper في حالة كان محذوفًا
-          if [ ! -f "gradlew" ]; then
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             echo "Downloading Gradle Wrapper..."
-            curl -sSLo gradle-wrapper.tgz https://services.gradle.org/distributions/gradle-8.4-bin.zip
-            unzip -q gradle-wrapper.tgz
+            curl -sSLo gradle-wrapper.zip https://services.gradle.org/distributions/gradle-8.4-bin.zip
+            unzip -q gradle-wrapper.zip
             mv gradle-* gradle
-            cp gradle/bin/gradle gradlew
+            cp gradle/lib/plugins/gradle-wrapper.jar gradle/wrapper/
           fi
 
       - name: Grant execute permission to Gradlew
@@ -45,7 +48,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y openjdk-17-jdk wget unzip
-          
+
           # تحميل Android SDK Command-line Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           mkdir -p $HOME/android-sdk/cmdline-tools
