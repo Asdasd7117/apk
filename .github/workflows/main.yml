@@ -37,12 +37,24 @@ jobs:
           wget https://services.gradle.org/distributions/gradle-7.5-bin.zip
           unzip gradle-7.5-bin.zip
           export PATH=$PWD/gradle-7.5/bin:$PATH
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip commandlinetools-linux-8512546_latest.zip
-          export ANDROID_SDK_ROOT=$PWD/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+
+          # تثبيت Android SDK Command-line Tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          unzip -q commandlinetools-linux-11076708_latest.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+
+          # تحديث المسار
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $HOME/.bashrc
+          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $HOME/.bashrc
+          source $HOME/.bashrc
+
+          # التأكد من أن sdkmanager يعمل
+          sdkmanager --version
+
+          # قبول التراخيص وتثبيت الأدوات اللازمة
           yes | sdkmanager --licenses
           sdkmanager "platforms;android-33" "build-tools;33.0.0"
 
@@ -50,7 +62,7 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: app-apk
           path: app/build/outputs/apk/debug/app-debug.apk
