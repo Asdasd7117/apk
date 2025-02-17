@@ -19,19 +19,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Ensure Gradle Wrapper Exists
+      - name: Fix Gradle Wrapper
         run: |
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "gradle-wrapper.jar not found, downloading..."
-            mkdir -p gradle/wrapper
-            wget -q -O gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-7.5-bin.zip
+          # حذف gradle-wrapper.jar في حالة كان غير صالح أو مفقود
+          if [ -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            if ! unzip -t gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+              echo "gradle-wrapper.jar is corrupted. Deleting..."
+              rm -f gradle/wrapper/gradle-wrapper.jar
+            fi
           fi
-          
-          # التحقق مما إذا كان الملف تالفًا
-          if ! unzip -t gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
-            echo "gradle-wrapper.jar is corrupted. Re-downloading..."
-            rm -f gradle/wrapper/gradle-wrapper.jar
-            wget -q -O gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-7.5-bin.zip
+
+          # إعادة تنزيل Gradle Wrapper في حالة كان محذوفًا
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "Downloading Gradle Wrapper..."
+            curl -L https://services.gradle.org/distributions/gradle-8.4-bin.zip -o gradle.zip
+            unzip -q gradle.zip
+            mv gradle-* gradle
+            mkdir -p gradle/wrapper
+            cp gradle/lib/plugins/gradle-wrapper.jar gradle/wrapper/
           fi
 
       - name: Grant execute permission to Gradlew
@@ -41,29 +46,23 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y openjdk-17-jdk wget unzip
-          wget https://services.gradle.org/distributions/gradle-7.5-bin.zip
-          unzip gradle-7.5-bin.zip
-          export PATH=$PWD/gradle-7.5/bin:$PATH
-
-          # تثبيت Android SDK Command-line Tools
+          
+          # تحميل Android SDK Command-line Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           mkdir -p $HOME/android-sdk/cmdline-tools
           unzip -q commandlinetools-linux-11076708_latest.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-          # تحديث المسار
+          # إعداد المسارات
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $HOME/.bashrc
           echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $HOME/.bashrc
           source $HOME/.bashrc
 
-          # التأكد من أن sdkmanager يعمل
-          sdkmanager --version
-
-          # قبول التراخيص وتثبيت الأدوات اللازمة
+          # تثبيت الأدوات المطلوبة
           yes | sdkmanager --licenses
-          sdkmanager "platforms;android-33" "build-tools;33.0.0"
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Build APK
         run: ./gradlew assembleDebug
