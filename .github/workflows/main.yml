@@ -4,22 +4,20 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # استخدام إصدار مستقر
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set Up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+      - name: Update Package Lists
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get update -y || true
+          sleep 5  # تجنب مشاكل الشبكة
+          sudo apt-get install -y wget unzip openjdk-11-jdk
 
       - name: Install Android SDK
         run: |
-          sudo apt update
-          sudo apt install -y wget unzip
           wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
           unzip commandlinetools-linux-*.zip -d android-sdk
           yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk "platforms;android-30" "build-tools;30.0.3"
